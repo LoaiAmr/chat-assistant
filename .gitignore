@@ -37,3 +37,6 @@ nul
 
 ### Environment files ###
 .env.example
+
+### Claude Code ###
+.claude/
