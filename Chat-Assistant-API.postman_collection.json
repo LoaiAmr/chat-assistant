@@ -1,0 +1,396 @@
+{
+	"info": {
+		"_postman_id": "chat-assistant-api-collection",
+		"name": "Chat Assistant API",
+		"description": "Complete API collection for the Chat Assistant application with Spring AI integration.\n\nBase URL: http://localhost:8089/api\n\n**Features:**\n- Chat messaging with AI\n- Conversation management\n- Token usage tracking\n\n**Authentication:**\nAll API requests require tenant authentication via the `X-Tenant-API-Key` header. The collection is pre-configured with a default test API key.\n\n**Setup:**\n1. Ensure the application is running on port 8089\n2. Import the environment file for automatic API key configuration\n3. Update conversationId variable after creating a chat",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Chat",
+			"description": "Endpoints for chat operations",
+			"item": [
+				{
+					"name": "Send Chat Message (New Conversation)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Tenant-API-Key",
+								"value": "{{tenantApiKey}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"message\": \"Hello! Can you explain what Spring AI is?\",\n  \"systemPrompt\": \"You are a helpful AI assistant specialized in Java and Spring Framework.\",\n  \"temperature\": 0.7,\n  \"maxTokens\": 500\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/chat",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"chat"
+							]
+						},
+						"description": "Send a chat message to start a new conversation. The response will include a conversationId that can be used for follow-up messages."
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// Save conversationId for future requests",
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"conversationId\", jsonData.conversationId);",
+									"    console.log(\"ConversationId saved: \" + jsonData.conversationId);",
+									"}"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Send Chat Message (Existing Conversation)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Tenant-API-Key",
+								"value": "{{tenantApiKey}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"conversationId\": \"{{conversationId}}\",\n  \"message\": \"Can you give me a code example?\",\n  \"temperature\": 0.7,\n  \"maxTokens\": 1000\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/chat",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"chat"
+							]
+						},
+						"description": "Continue an existing conversation by providing the conversationId from a previous chat."
+					},
+					"response": []
+				},
+				{
+					"name": "Send Chat Message (Minimal)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Tenant-API-Key",
+								"value": "{{tenantApiKey}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"message\": \"Tell me a joke about programming\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/chat",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"chat"
+							]
+						},
+						"description": "Send a minimal chat message with only the required 'message' field. Optional parameters (systemPrompt, temperature, maxTokens) will use default values."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Conversations",
+			"description": "Endpoints for conversation management",
+			"item": [
+				{
+					"name": "List All Conversations",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Tenant-API-Key",
+								"value": "{{tenantApiKey}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/conversations?page=0&size=20&sort=updatedAt,desc",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"conversations"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0",
+									"description": "Page number (0-indexed)"
+								},
+								{
+									"key": "size",
+									"value": "20",
+									"description": "Number of items per page (default: 20)"
+								},
+								{
+									"key": "sort",
+									"value": "updatedAt,desc",
+									"description": "Sort field and direction (default: updatedAt)"
+								}
+							]
+						},
+						"description": "Retrieve a paginated list of all conversations for the current tenant. Returns conversation summaries without full message history."
+					},
+					"response": []
+				},
+				{
+					"name": "List Conversations (First Page)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Tenant-API-Key",
+								"value": "{{tenantApiKey}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/conversations",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"conversations"
+							]
+						},
+						"description": "Get the first page of conversations using default pagination settings (20 items, sorted by updatedAt)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Conversation by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Tenant-API-Key",
+								"value": "{{tenantApiKey}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/conversations/{{conversationId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"conversations",
+								"{{conversationId}}"
+							]
+						},
+						"description": "Retrieve a specific conversation with its complete message history. Use the conversationId from a previous chat response or from the conversation list."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Conversation",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "X-Tenant-API-Key",
+								"value": "{{tenantApiKey}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/conversations/{{conversationId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"conversations",
+								"{{conversationId}}"
+							]
+						},
+						"description": "Delete a conversation and all its associated messages. This action cannot be undone."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Token Usage",
+			"description": "Endpoints for token usage statistics",
+			"item": [
+				{
+					"name": "Get Current Month Usage",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Tenant-API-Key",
+								"value": "{{tenantApiKey}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/tenants/usage",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"tenants",
+								"usage"
+							]
+						},
+						"description": "Get token usage statistics for the current month (default). Returns total tokens, costs, daily breakdown, and limit information."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Usage for Date Range",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Tenant-API-Key",
+								"value": "{{tenantApiKey}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/tenants/usage?startDate=2024-01-01&endDate=2024-01-31",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"tenants",
+								"usage"
+							],
+							"query": [
+								{
+									"key": "startDate",
+									"value": "2024-01-01",
+									"description": "Start date in ISO format (YYYY-MM-DD)"
+								},
+								{
+									"key": "endDate",
+									"value": "2024-01-31",
+									"description": "End date in ISO format (YYYY-MM-DD)"
+								}
+							]
+						},
+						"description": "Get token usage statistics for a specific date range. Both startDate and endDate should be in ISO date format (YYYY-MM-DD)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Usage with Start Date Only",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Tenant-API-Key",
+								"value": "{{tenantApiKey}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/tenants/usage?startDate=2024-01-01",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"tenants",
+								"usage"
+							],
+							"query": [
+								{
+									"key": "startDate",
+									"value": "2024-01-01",
+									"description": "Start date (end date defaults to last day of current month)"
+								}
+							]
+						},
+						"description": "Get token usage starting from a specific date. If endDate is not provided, it defaults to the last day of the current month."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8089/api",
+			"type": "string"
+		},
+		{
+			"key": "conversationId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "tenantApiKey",
+			"value": "dev-test-api-key-12345",
+			"type": "string"
+		}
+	]
+}

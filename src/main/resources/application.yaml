@@ -1,0 +1,165 @@
+spring:
+  application:
+    name: chat-assistant
+
+  profiles:
+    active: dev
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/chat_assistant_dev
+    username: ${DB_USERNAME:chat_user}
+    password: ${DB_PASSWORD:changeme}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      auto-commit: true
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        use_sql_comments: true
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+    validate-on-migrate: true
+
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=1000,expireAfterWrite=10m
+
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY:your-openai-api-key-here}
+      chat:
+        options:
+          model: gpt-4o-mini
+          temperature: 0.7
+          max-tokens: 2000
+      base-url: ${OPENAI_BASE_URL:https://api.openai.com}
+
+# Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+      probes:
+        enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    tags:
+      application: ${spring.application.name}
+  health:
+    diskspace:
+      enabled: true
+    db:
+      enabled: true
+
+# Resilience4j Configuration
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 10s
+        failureRateThreshold: 50
+        eventConsumerBufferSize: 10
+    instances:
+      openai:
+        baseConfig: default
+        slidingWindowType: COUNT_BASED
+
+  timelimiter:
+    configs:
+      default:
+        timeoutDuration: 30s
+    instances:
+      openai:
+        baseConfig: default
+
+  ratelimiter:
+    instances:
+      openai:
+        limitForPeriod: 100
+        limitRefreshPeriod: 1m
+        timeoutDuration: 5s
+
+# Application-specific Configuration
+chat:
+  moderation:
+    enabled: true
+    reject-on-flag: true
+    categories:
+      - HATE
+      - SEXUAL
+      - VIOLENCE
+      - SELF_HARM
+
+  rate-limit:
+    requests-per-minute: 60
+    requests-per-hour: 1000
+    enabled: true
+
+  token:
+    default-daily-limit: 100000
+    default-monthly-limit: 3000000
+    cost-per-1k-prompt-tokens: 0.00015
+    cost-per-1k-completion-tokens: 0.0006
+
+  conversation:
+    max-messages-per-conversation: 100
+    context-window-size: 50
+    auto-title-enabled: true
+
+  cache:
+    enabled: true
+    ttl-minutes: 10
+    max-size: 1000
+
+# Logging Configuration
+logging:
+  level:
+    com.loai.spring.ai.chat_assistant: DEBUG
+    org.springframework.ai: DEBUG
+    org.springframework.web: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+server:
+  port: 8089
+  servlet:
+    context-path: /api
+  compression:
+    enabled: true
+  error:
+    include-message: always
+    include-binding-errors: always

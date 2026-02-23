@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./mvnw clean:*)",
+      "Bash(./mvnw.cmd clean:*)",
+      "Bash(mvn compile:*)",
+      "Bash(./mvnw.cmd compile:*)",
+      "Bash(Select-Object -First 150)",
+      "WebSearch",
+      "Bash(mvn clean compile:*)",
+      "Bash(where mvn:*)",
+      "Bash(.mvnw.cmd spring-boot:run:*)",
+      "Bash(mvnw.cmd spring-boot:run:*)",
+      "Bash(./mvnw spring-boot:run:*)",
+      "Bash(cat:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git config:*)",
+      "Bash(dir /s /b nul)"
+    ]
+  }
+}
