@@ -15,6 +15,7 @@ import org.springframework.ai.openai.api.OpenAiApi;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * OpenAI implementation of AIProvider using Spring AI.
@@ -49,7 +50,9 @@ public class OpenAIProvider implements AIProvider {
 
             // Create prompt and call OpenAI
             Prompt prompt = new Prompt(springAIMessages, options);
+            long start = System.nanoTime();
             ChatResponse response = chatModel.call(prompt);
+            long durationMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
 
             // Extract response content
             String content = response.getResult().getOutput().getText();
@@ -65,8 +68,8 @@ public class OpenAIProvider implements AIProvider {
 
             String model = response.getMetadata() != null ? response.getMetadata().getModel() : "unknown";
 
-            log.info("OpenAI response generated successfully. Model={}, PromptTokens={}, CompletionTokens={}",
-                model, promptTokens.getValue(), completionTokens.getValue());
+            log.info("OpenAI API call completed: model={}, promptTokens={}, completionTokens={}, durationMs={}",
+                model, promptTokens.getValue(), completionTokens.getValue(), durationMs);
 
             return new AIResponse(content, promptTokens, completionTokens, model);
 
@@ -82,7 +85,7 @@ public class OpenAIProvider implements AIProvider {
     @SuppressWarnings("unused")
     private AIResponse generateResponseFallback(List<Message> messages, Double temperature,
                                                 Integer maxTokens, Exception e) {
-        log.error("Circuit breaker activated. OpenAI service unavailable: {}", e.getMessage());
+        log.error("Circuit breaker OPEN for OpenAI: cause={}", e.getClass().getSimpleName() + ": " + e.getMessage());
         throw new AIProviderException(
             "AI service is temporarily unavailable. Please try again later.", "OpenAI", e);
     }

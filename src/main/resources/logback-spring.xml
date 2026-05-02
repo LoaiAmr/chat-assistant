@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <springProperty scope="context" name="appName" source="spring.application.name" defaultValue="chat-assistant"/>
+
+    <!-- ===== DEV: Human-readable colorized console ===== -->
+    <springProfile name="dev">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>%d{HH:mm:ss.SSS} %highlight(%-5level) [%cyan(%thread)] [cid:%X{correlationId:-?}] [tid:%X{tenantId:-?}] [conv:%X{conversationId:-?}] %logger{40} - %msg%n%ex</pattern>
+            </encoder>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+        <logger name="com.loai.spring.ai.chat_assistant" level="DEBUG" additivity="false">
+            <appender-ref ref="CONSOLE"/>
+        </logger>
+        <logger name="org.springframework.ai" level="DEBUG" additivity="false">
+            <appender-ref ref="CONSOLE"/>
+        </logger>
+        <logger name="org.hibernate.SQL" level="DEBUG" additivity="false">
+            <appender-ref ref="CONSOLE"/>
+        </logger>
+        <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="TRACE" additivity="false">
+            <appender-ref ref="CONSOLE"/>
+        </logger>
+    </springProfile>
+
+    <!-- ===== PROD: Structured JSON to stdout ===== -->
+    <springProfile name="prod">
+        <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                <customFields>{"service":"${appName}","env":"prod"}</customFields>
+                <fieldNames>
+                    <timestamp>@timestamp</timestamp>
+                    <version>[ignore]</version>
+                    <levelValue>[ignore]</levelValue>
+                </fieldNames>
+                <throwableConverter class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
+                    <maxDepthPerCause>20</maxDepthPerCause>
+                    <rootCauseFirst>true</rootCauseFirst>
+                </throwableConverter>
+            </encoder>
+        </appender>
+
+        <root level="WARN">
+            <appender-ref ref="JSON_CONSOLE"/>
+        </root>
+        <logger name="com.loai.spring.ai.chat_assistant" level="INFO" additivity="false">
+            <appender-ref ref="JSON_CONSOLE"/>
+        </logger>
+        <logger name="org.springframework.ai" level="WARN" additivity="false">
+            <appender-ref ref="JSON_CONSOLE"/>
+        </logger>
+        <logger name="org.hibernate.SQL" level="WARN" additivity="false">
+            <appender-ref ref="JSON_CONSOLE"/>
+        </logger>
+        <logger name="org.springframework.web" level="WARN" additivity="false">
+            <appender-ref ref="JSON_CONSOLE"/>
+        </logger>
+        <!-- INFO so circuit breaker state changes are visible in prod -->
+        <logger name="io.github.resilience4j" level="INFO" additivity="false">
+            <appender-ref ref="JSON_CONSOLE"/>
+        </logger>
+    </springProfile>
+
+    <!-- ===== STAGING / DEFAULT: JSON with DEBUG for app code ===== -->
+    <springProfile name="!dev &amp; !prod">
+        <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                <customFields>{"service":"${appName}","env":"staging"}</customFields>
+            </encoder>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="JSON_CONSOLE"/>
+        </root>
+        <logger name="com.loai.spring.ai.chat_assistant" level="DEBUG" additivity="false">
+            <appender-ref ref="JSON_CONSOLE"/>
+        </logger>
+    </springProfile>
+
+</configuration>

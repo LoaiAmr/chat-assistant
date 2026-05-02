@@ -24,11 +24,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.slf4j.MDC;
+
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Use case for sending a chat message and receiving an AI response.
@@ -85,7 +88,8 @@ public class SendChatMessageUseCase implements ChatService {
         // Step 3: Moderate input
         ModerationResult inputModeration = moderationService.moderateContent(request.getMessage());
         if (inputModeration.isFailed()) {
-            log.warn("Input moderation failed for tenant {}: {}", tenantId, inputModeration.getFlaggedCategories());
+            log.warn("Input moderation failed for tenant {}: categories={}, contentPreview={}",
+                tenantId, inputModeration.getFlaggedCategories(), truncate(request.getMessage(), 50));
             throw new ModerationFailedException(inputModeration.getFlaggedCategories());
         }
 
@@ -99,6 +103,9 @@ public class SendChatMessageUseCase implements ChatService {
             conversation = createNewConversation(tenantId);
             conversation = conversationRepository.save(conversation);
         }
+
+        MDC.put("conversationId", conversation.getId().getValue().toString());
+        try {
 
         // Step 5: Build message history for AI context
         List<Message> conversationHistory = new ArrayList<>(conversation.getMessages());
@@ -153,12 +160,15 @@ public class SendChatMessageUseCase implements ChatService {
                             "gpt-4o-mini"
                     ))
                     .orElseGet(() -> {
-                        // Call AI provider
+                        // Call AI provider with timing
+                        long aiStart = System.nanoTime();
                         AIProvider.AIResponse response = aiProvider.generateResponse(
                                 conversationHistory,
                                 request.getTemperature(),
                                 request.getMaxTokens()
                         );
+                        log.info("AI call completed: durationMs={}",
+                                TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - aiStart));
                         // Cache the response
                         cacheService.cacheResponse(cacheKey, response.content());
                         return response;
@@ -231,6 +241,14 @@ public class SendChatMessageUseCase implements ChatService {
                         .build())
                 .moderationPassed(true)
                 .build();
+        } finally {
+            MDC.remove("conversationId");
+        }
+    }
+
+    private static String truncate(String text, int max) {
+        if (text == null) return null;
+        return text.length() <= max ? text : text.substring(0, max) + "...[truncated]";
     }
 
     private Conversation createNewConversation(TenantId tenantId) {

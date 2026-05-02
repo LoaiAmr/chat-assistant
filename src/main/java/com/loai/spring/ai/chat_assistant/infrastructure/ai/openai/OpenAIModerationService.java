@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * OpenAI Moderation API implementation.
@@ -34,7 +35,9 @@ public class OpenAIModerationService implements ModerationService {
 
         try {
             ModerationPrompt prompt = new ModerationPrompt(content);
+            long start = System.nanoTime();
             ModerationResponse response = moderationModel.call(prompt);
+            long durationMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
 
             // Get the Moderation object from the response
             var moderation = response.getResult().getOutput();
@@ -50,14 +53,14 @@ public class OpenAIModerationService implements ModerationService {
             boolean flagged = moderationResult.isFlagged();
 
             if (!flagged) {
-                log.debug("Content passed moderation");
+                log.debug("Moderation passed: durationMs={}", durationMs);
                 return ModerationResult.approved();
             }
 
             // Extract flagged categories
             List<String> flaggedCategories = extractFlaggedCategories(moderationResult.getCategories());
 
-            log.warn("Content flagged for moderation. Categories: {}", flaggedCategories);
+            log.warn("Moderation flagged content: categories={}, durationMs={}", flaggedCategories, durationMs);
 
             // For MVP, we'll reject flagged content
             return ModerationResult.rejected(flaggedCategories);

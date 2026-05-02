@@ -109,6 +109,23 @@
 			<artifactId>micrometer-registry-prometheus</artifactId>
 		</dependency>
 
+		<!-- Structured JSON logging -->
+		<dependency>
+			<groupId>net.logstash.logback</groupId>
+			<artifactId>logstash-logback-encoder</artifactId>
+			<version>8.0</version>
+		</dependency>
+
+		<!-- Micrometer Tracing (Spring Boot 3.x replacement for Spring Cloud Sleuth) -->
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-tracing-bridge-brave</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.zipkin.reporter2</groupId>
+			<artifactId>zipkin-reporter-brave</artifactId>
+		</dependency>
+
 		<!-- Resilience (Circuit Breaker, Rate Limiter) -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

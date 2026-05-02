@@ -1,35 +1,26 @@
 package com.loai.spring.ai.chat_assistant.infrastructure.config;
 
-import com.loai.spring.ai.chat_assistant.infrastructure.filter.CorrelationIdFilter;
-import com.loai.spring.ai.chat_assistant.infrastructure.security.TenantInterceptor;
+import com.loai.spring.ai.chat_assistant.infrastructure.logging.MDCFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
- * Web configuration for CORS, interceptors, and filters.
+ * Web configuration for CORS and filters.
+ * Interceptors removed — tenant auth and MDC enrichment are handled by MDCFilter.
  */
 @Configuration
 @RequiredArgsConstructor
 public class WebConfiguration implements WebMvcConfigurer {
 
-    private final TenantInterceptor tenantInterceptor;
-    private final CorrelationIdFilter correlationIdFilter;
+    private final MDCFilter mdcFilter;
 
     @Value("${chat.cors.allowed-origins:http://localhost:3000}")
     private String[] allowedOrigins;
-
-    @Override
-    public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(tenantInterceptor)
-            .addPathPatterns("/v1/**")
-            .excludePathPatterns("/actuator/**");
-    }
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
@@ -42,14 +33,11 @@ public class WebConfiguration implements WebMvcConfigurer {
             .maxAge(3600);
     }
 
-    /**
-     * Registers the correlation ID filter.
-     */
     @Bean
-    public FilterRegistrationBean<CorrelationIdFilter> correlationIdFilterRegistration() {
-        FilterRegistrationBean<CorrelationIdFilter> registration = new FilterRegistrationBean<>();
-        registration.setFilter(correlationIdFilter);
-        registration.addUrlPatterns("/v1/*");
+    public FilterRegistrationBean<MDCFilter> mdcFilterRegistration() {
+        FilterRegistrationBean<MDCFilter> registration = new FilterRegistrationBean<>();
+        registration.setFilter(mdcFilter);
+        registration.addUrlPatterns("/*");
         registration.setOrder(1);
         return registration;
     }

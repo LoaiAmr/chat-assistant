@@ -4,6 +4,7 @@ import com.loai.spring.ai.chat_assistant.application.dto.response.ErrorResponse;
 import com.loai.spring.ai.chat_assistant.application.exception.*;
 import com.loai.spring.ai.chat_assistant.domain.exception.*;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -45,6 +46,7 @@ public class GlobalExceptionHandler {
             .message("Input validation failed")
             .details(fieldErrors)
             .path(request.getDescription(false).replace("uri=", ""))
+            .correlationId(MDC.get("correlationId"))
             .build();
 
         log.warn("Validation error: {}", fieldErrors);
@@ -65,9 +67,10 @@ public class GlobalExceptionHandler {
             .error("Unauthorized")
             .message(ex.getMessage())
             .path(request.getDescription(false).replace("uri=", ""))
+            .correlationId(MDC.get("correlationId"))
             .build();
 
-        log.error("Tenant not found: {}", ex.getMessage());
+        log.warn("Tenant not found: {}", ex.getMessage());
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
     }
@@ -85,9 +88,10 @@ public class GlobalExceptionHandler {
             .error("Not Found")
             .message(ex.getMessage())
             .path(request.getDescription(false).replace("uri=", ""))
+            .correlationId(MDC.get("correlationId"))
             .build();
 
-        log.error("Conversation not found: {}", ex.getMessage());
+        log.warn("Conversation not found: {}", ex.getMessage());
 
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
@@ -105,6 +109,7 @@ public class GlobalExceptionHandler {
             .error("Rate Limit Exceeded")
             .message(ex.getMessage())
             .path(request.getDescription(false).replace("uri=", ""))
+            .correlationId(MDC.get("correlationId"))
             .build();
 
         log.warn("Rate limit exceeded: {}", ex.getMessage());
@@ -127,6 +132,7 @@ public class GlobalExceptionHandler {
             .error("Token Budget Exceeded")
             .message(ex.getMessage())
             .path(request.getDescription(false).replace("uri=", ""))
+            .correlationId(MDC.get("correlationId"))
             .build();
 
         log.warn("Token budget exceeded: {}", ex.getMessage());
@@ -147,9 +153,10 @@ public class GlobalExceptionHandler {
             .error("Content Moderation Failed")
             .message(ex.getMessage())
             .path(request.getDescription(false).replace("uri=", ""))
+            .correlationId(MDC.get("correlationId"))
             .build();
 
-        log.error("Moderation failed: {}", ex.getMessage());
+        log.warn("Moderation failed: {}", ex.getMessage());
 
         return ResponseEntity.badRequest().body(errorResponse);
     }
@@ -167,6 +174,7 @@ public class GlobalExceptionHandler {
             .error("AI Service Unavailable")
             .message(ex.getMessage())
             .path(request.getDescription(false).replace("uri=", ""))
+            .correlationId(MDC.get("correlationId"))
             .build();
 
         log.error("AI provider error: {}", ex.getMessage(), ex);
@@ -187,6 +195,7 @@ public class GlobalExceptionHandler {
             .error("Invalid Message")
             .message(ex.getMessage())
             .path(request.getDescription(false).replace("uri=", ""))
+            .correlationId(MDC.get("correlationId"))
             .build();
 
         log.warn("Message validation error: {}", ex.getMessage());
@@ -207,6 +216,7 @@ public class GlobalExceptionHandler {
             .error("Domain Error")
             .message(ex.getMessage())
             .path(request.getDescription(false).replace("uri=", ""))
+            .correlationId(MDC.get("correlationId"))
             .build();
 
         log.error("Domain exception: {}", ex.getMessage());
@@ -227,6 +237,7 @@ public class GlobalExceptionHandler {
             .error("Invalid Argument")
             .message(ex.getMessage())
             .path(request.getDescription(false).replace("uri=", ""))
+            .correlationId(MDC.get("correlationId"))
             .build();
 
         log.warn("Illegal argument: {}", ex.getMessage());
@@ -247,6 +258,7 @@ public class GlobalExceptionHandler {
             .error("Internal Server Error")
             .message(ex.getMessage())
             .path(request.getDescription(false).replace("uri=", ""))
+            .correlationId(MDC.get("correlationId"))
             .build();
 
         log.error("Illegal state: {}", ex.getMessage(), ex);
@@ -267,6 +279,7 @@ public class GlobalExceptionHandler {
             .error("Internal Server Error")
             .message("An unexpected error occurred")
             .path(request.getDescription(false).replace("uri=", ""))
+            .correlationId(MDC.get("correlationId"))
             .build();
 
         log.error("Unexpected error: {}", ex.getMessage(), ex);
